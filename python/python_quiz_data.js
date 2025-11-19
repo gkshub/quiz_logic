@@ -29,3 +29,5 @@ print(x[-2])
     }
     // ADD MORE QUESTIONS HERE
 ];
+
+startQuiz();

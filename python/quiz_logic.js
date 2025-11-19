@@ -6,14 +6,29 @@ const dataChunks = [
     // ... add more chunks
 ];
 
-// The master quiz array starts with the first chunk
-let quizData = quizData_1; // Assumes data-q1-50.js was loaded first
-
+// Define variables globally, but don't initialize quizData yet
+let quizData; 
 let currentQuestion = 0;
 let answered = false;
-// This index tracks the NEXT chunk that needs to be dynamically loaded from dataChunks
-let currentChunkIndex = 0; 
-const QUESTIONS_PER_CHUNK = 4; // Not strictly used in the current logic, but kept for context
+let currentChunkIndex = 0;
+const QUESTIONS_PER_CHUNK = 4;
+
+// NEW function to be called from the data file
+function startQuiz() {
+    // This runs ONLY AFTER the data script has finished defining quizData_1
+    if (typeof quizData_1 === 'undefined') {
+        // Fallback for debugging
+        document.getElementById('quiz-container').innerHTML = "Error: Initial quiz data (quizData_1) not found.";
+        console.error("Initialization Error: 'quizData_1' is not defined.");
+        return;
+    }
+    
+    // Initialize the master quiz array
+    quizData = quizData_1; 
+    
+    // Now that data is guaranteed to be loaded, start the quiz
+    loadQuestion();
+}
 
 // Function to handle dynamic loading for a specific index
 function loadNextChunk(indexToLoad) {
@@ -209,7 +224,4 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('quiz-container').innerHTML = "Error: Initial quiz data not found.";
         return;
     }
-    
-    // Now call the function to initialize and load the first question
-    loadQuestion();
 });
