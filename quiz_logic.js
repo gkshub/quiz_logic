@@ -1,3 +1,4 @@
+const quizData = pythonQuizData;
 let currentQuestion = 0;
 let answered = false;
 
