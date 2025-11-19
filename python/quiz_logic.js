@@ -2,8 +2,7 @@
 
 // Map of all data chunks and their loading status
 const dataChunks = [
-    { url: 'https://YOUR_EXTERNAL_URL/data-q51-100.js', loaded: false, variable: 'quizData_2' },
-    { url: 'https://YOUR_EXTERNAL_URL/data-q101-150.js', loaded: false, variable: 'quizData_3' },
+    { url: 'https://gkshub.github.io/quiz_logic/python/python_quiz_data_02.js', loaded: false, variable: 'quizData_2' },
     // ... add more chunks
 ];
 
@@ -13,7 +12,7 @@ let quizData = quizData_1; // Assumes data-q1-50.js was loaded first
 let currentQuestion = 0;
 let answered = false;
 let currentChunkIndex = 0;
-const QUESTIONS_PER_CHUNK = 50;
+const QUESTIONS_PER_CHUNK = 4;
 
 // Function to handle dynamic loading
 function loadNextChunk() {
