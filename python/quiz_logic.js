@@ -1,10 +1,48 @@
-const quizData = pythonQuizData;
+// quiz-logic.js
+
+// Map of all data chunks and their loading status
+const dataChunks = [
+    { url: 'https://YOUR_EXTERNAL_URL/data-q51-100.js', loaded: false, variable: 'quizData_2' },
+    { url: 'https://YOUR_EXTERNAL_URL/data-q101-150.js', loaded: false, variable: 'quizData_3' },
+    // ... add more chunks
+];
+
+// The master quiz array starts with the first chunk
+let quizData = quizData_1; // Assumes data-q1-50.js was loaded first
+
 let currentQuestion = 0;
 let answered = false;
+let currentChunkIndex = 0;
+const QUESTIONS_PER_CHUNK = 50;
+
+// Function to handle dynamic loading
+function loadNextChunk() {
+    const chunkInfo = dataChunks[currentChunkIndex];
+    if (!chunkInfo || chunkInfo.loaded) return; // Stop if no more chunks or already loaded
+
+    const script = document.createElement('script');
+    script.src = chunkInfo.url;
+    
+    // Set up a function to run once the script is loaded
+    script.onload = () => {
+        chunkInfo.loaded = true;
+        // Append the newly loaded data to the master quizData array
+        quizData = quizData.concat(window[chunkInfo.variable]);
+        console.log(`Chunk ${chunkInfo.variable} loaded. Total questions: ${quizData.length}`);
+    };
+
+    document.head.appendChild(script);
+}
 
 function loadQuestion() {
     const quizContainer = document.getElementById('quiz-container');
     const qData = quizData[currentQuestion];
+
+    // Check if we are near the end of the loaded data (e.g., 5 questions remaining)
+    if (currentQuestion >= quizData.length - 5 && currentChunkIndex < dataChunks.length) {
+        currentChunkIndex++;
+        loadNextChunk();
+    }
 
     let html = `
         <h3>Question ${currentQuestion + 1} of ${quizData.length}</h3>
