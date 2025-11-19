@@ -11,13 +11,20 @@ let quizData = quizData_1; // Assumes data-q1-50.js was loaded first
 
 let currentQuestion = 0;
 let answered = false;
-let currentChunkIndex = 0;
-const QUESTIONS_PER_CHUNK = 4;
+// This index tracks the NEXT chunk that needs to be dynamically loaded from dataChunks
+let currentChunkIndex = 0; 
+const QUESTIONS_PER_CHUNK = 4; // Not strictly used in the current logic, but kept for context
 
-// Function to handle dynamic loading
-function loadNextChunk() {
-    const chunkInfo = dataChunks[currentChunkIndex];
-    if (!chunkInfo || chunkInfo.loaded) return; // Stop if no more chunks or already loaded
+// Function to handle dynamic loading for a specific index
+function loadNextChunk(indexToLoad) {
+    const chunkInfo = dataChunks[indexToLoad];
+    
+    // Check if the chunk exists or if it's already been loaded
+    if (!chunkInfo || chunkInfo.loaded) {
+        return false; // Load not initiated
+    } 
+
+    console.log(`Attempting to load chunk at index ${indexToLoad}: ${chunkInfo.url}`);
 
     const script = document.createElement('script');
     script.src = chunkInfo.url;
@@ -28,21 +35,52 @@ function loadNextChunk() {
         // Append the newly loaded data to the master quizData array
         quizData = quizData.concat(window[chunkInfo.variable]);
         console.log(`Chunk ${chunkInfo.variable} loaded. Total questions: ${quizData.length}`);
+        
+        // After a successful load, reload the current question to update the 
+        // "Question X of Y" count immediately, if the user is near the end.
+        // Or, simply ensure loadQuestion() is called when the user advances.
+        
+        // Since loadQuestion() is triggered by user navigation, we usually don't need 
+        // to re-render here, but the updated length will be available for the next call.
+        
+        // If the load was asynchronous, and the user is sitting on the second-to-last
+        // question, they might want to see the updated count.
+        if (currentQuestion >= quizData.length - 1) {
+             // If the user is on the last question of the old set, re-render to update the count
+             loadQuestion();
+        }
+    };
+    
+    // Handle error case (optional but recommended)
+    script.onerror = () => {
+        console.error(`Failed to load chunk: ${chunkInfo.url}`);
     };
 
     document.head.appendChild(script);
+    return true; // Load initiated
 }
 
 function loadQuestion() {
     const quizContainer = document.getElementById('quiz-container');
     const qData = quizData[currentQuestion];
-
+    
+    // 1. DYNAMIC LOADING LOGIC:
     // Check if we are near the end of the loaded data (e.g., 5 questions remaining)
+    // AND we haven't processed all defined chunks in dataChunks.
     if (currentQuestion >= quizData.length - 5 && currentChunkIndex < dataChunks.length) {
-        currentChunkIndex++;
-        loadNextChunk();
+        
+        // Attempt to load the chunk at the current index (currentChunkIndex)
+        const loadInitiated = loadNextChunk(currentChunkIndex);
+        
+        // IMPORTANT: Only advance the index if the load was successfully started
+        // (i.e., the chunk existed and wasn't already loaded).
+        if (loadInitiated) {
+            currentChunkIndex++;
+            console.log(`Next chunk index set to: ${currentChunkIndex}`);
+        }
     }
 
+    // 2. RENDERING LOGIC:
     let html = `
         <h3>Question ${currentQuestion + 1} of ${quizData.length}</h3>
         <p class="question-text">${qData.question}</p>
@@ -112,12 +150,16 @@ function nextQuestion() {
         currentQuestion++;
         answered = false;
         loadQuestion();
-    } else if (currentQuestion === quizData.length - 1 && document.getElementById('quiz-complete-message').style.display === 'none') {
+    } else if (currentQuestion === quizData.length - 1 && answered) { // Ensure they checked the last answer
         // Show completion message on the last page only after checking
         document.getElementById('quiz-container').style.display = 'none';
         document.getElementById('quiz-complete-message').style.display = 'block';
         document.getElementById('prev-btn').style.display = 'none';
         document.getElementById('next-btn').style.display = 'none';
+    } else if (currentQuestion === quizData.length - 1 && !answered) {
+        // If on the last question and not answered, do nothing or prompt checkAnswer
+        // This case is typically handled by the 'Check Answer' button being available.
+        return; 
     }
 }
 
@@ -129,6 +171,10 @@ function prevQuestion() {
         // Hide completion message if going back from the end
         document.getElementById('quiz-container').style.display = 'block';
         document.getElementById('quiz-complete-message').style.display = 'none';
+        
+        // Re-show navigation buttons if they were hidden by the completion message
+        document.getElementById('prev-btn').style.display = 'inline-block';
+        document.getElementById('next-btn').style.display = 'inline-block';
     }
 }
 
@@ -138,10 +184,20 @@ function updateNavigationButtons() {
     const nextBtn = document.getElementById('next-btn');
     if (currentQuestion === quizData.length - 1) {
         nextBtn.innerHTML = 'Finish Quiz';
-        nextBtn.onclick = nextQuestion; // Reuse nextQuestion to show completion message
+        // Note: nextQuestion logic handles showing the completion message
+        nextBtn.onclick = nextQuestion; 
+        
+        // If the last question is not answered, disable 'Finish Quiz'
+        if (!answered) {
+            nextBtn.disabled = true;
+        } else {
+            nextBtn.disabled = false;
+        }
+
     } else {
         nextBtn.innerHTML = 'Next →';
         nextBtn.onclick = nextQuestion;
+        nextBtn.disabled = !answered; // Must answer before going to the next question
     }
 }
 
