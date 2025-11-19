@@ -201,5 +201,15 @@ function updateNavigationButtons() {
     }
 }
 
-// Start the quiz when the page loads
-loadQuestion();
+// Start the quiz only after the entire page and all deferred scripts are ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if the initial data variable exists before starting the quiz
+    if (typeof quizData_1 === 'undefined') {
+        console.error("Initialization Error: 'quizData_1' is not defined. Check your python_quiz_data.js file.");
+        document.getElementById('quiz-container').innerHTML = "Error: Initial quiz data not found.";
+        return;
+    }
+    
+    // Now call the function to initialize and load the first question
+    loadQuestion();
+});
