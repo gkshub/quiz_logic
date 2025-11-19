@@ -1,4 +1,4 @@
-const quizData = [
+const pythonQuizData = [
     {
         question: "Which data type is immutable in Python?",
         options: ["list", "dict", "tuple", "set"],
